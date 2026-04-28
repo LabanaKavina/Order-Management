@@ -1,0 +1,219 @@
+# Implementation Plan: Order Management
+
+## Overview
+
+Build a food delivery order management app with a `server/` (Node.js + Express + TypeScript) backend following MVC architecture and a `client/` (React + Vite + MUI + TypeScript) frontend. The backend provides REST APIs for menu retrieval, order placement, and status tracking with in-memory storage. The frontend provides a polished MUI-based UI for browsing the menu, managing a cart, placing orders, and tracking order status. Tests use Jest with fast-check for property-based testing and supertest for API tests.
+
+## Tasks
+
+- [-] 1. Initialize project structure and dependencies
+  - [x] 1.1 Set up `server/` with TypeScript, Express, Jest, fast-check, supertest, uuid
+    - Initialize `server/package.json` with scripts for dev, build, test
+    - Create `server/tsconfig.json`
+    - Create `server/jest.config.ts`
+    - Create folder structure: `src/models/`, `src/services/`, `src/controllers/`, `src/routes/`, `src/data/`, `src/simulator/`
+    - _Requirements: 7.1, 7.2, 7.3, 7.4_
+  - [x] 1.2 Set up `client/` with Vite, React, TypeScript, MUI, React Router
+    - Initialize with Vite React-TS template
+    - Install `@mui/material`, `@mui/icons-material`, `@emotion/react`, `@emotion/styled`, `react-router-dom`
+    - Create folder structure: `src/components/`, `src/pages/`, `src/hooks/`, `src/api/`, `src/theme/`
+    - _Requirements: 7.5_
+  - [-] 1.3 Initialize git repository at project root
+    - Create `.gitignore` for node_modules, dist, build artifacts
+    - Initial commit with project scaffolding
+
+- [ ] 2. Implement server models, validators, and data store
+  - [ ] 2.1 Create TypeScript interfaces and types in `server/src/models/`
+    - Define `MenuItem`, `DeliveryDetails`, `OrderItem`, `Order`, `OrderStatus`, `STATUS_SEQUENCE`, `ValidationResult`, `PlaceOrderRequest`, `ErrorResponse`
+    - _Requirements: 1.2, 4.3, 8.1_
+  - [ ] 2.2 Implement validators in `server/src/models/validators.ts`
+    - `validateDeliveryDetails()`: check non-empty name, non-empty address, phone regex `/^\+?[\d\s\-()]{7,15}$/`
+    - `validateOrderItems()`: check non-empty array, each item has positive integer quantity and valid menuItemId
+    - _Requirements: 3.2, 6.1, 6.2, 6.3_
+  - [ ]* 2.3 Write property tests for validators
+    - **Property 6: Delivery details validation** — For any DeliveryDetails, validation passes iff name is non-empty, address is non-empty, and phone matches the pattern. Invalid fields are listed in errors.
+    - **Validates: Requirements 3.2, 3.4, 6.1, 6.2**
+    - **Property 10: Invalid quantity rejection** — For any order item with zero, negative, or non-integer quantity, validation rejects with appropriate error.
+    - **Validates: Requirements 6.3**
+  - [ ] 2.4 Create in-memory data store and seed data in `server/src/data/`
+    - Implement `store.ts` with module-level `menuItems` array (seeded) and `orders` Map
+    - Expose functions: `getMenuItems()`, `getMenuItemById()`, `getOrders()`, `getOrderById()`, `saveOrder()`, `updateOrder()`
+    - Seed with 6 menu items from design
+    - _Requirements: 1.1, 7.1_
+
+- [ ] 3. Implement server services
+  - [ ] 3.1 Implement `menuService` in `server/src/services/menuService.ts`
+    - `getAllItems()`: returns all menu items from store
+    - `getItemById(id)`: returns single item or undefined
+    - _Requirements: 1.1_
+  - [ ] 3.2 Implement `orderService` in `server/src/services/orderService.ts`
+    - `placeOrder(items, delivery)`: validate inputs, compute total, create Order with "Order Received" status, save to store, start status simulation, return Order
+    - `getOrder(id)`: retrieve order by ID from store
+    - `getAllOrders()`: retrieve all orders from store
+    - `updateOrderStatus(id, status)`: validate status transition (forward-only), update and return Order
+    - _Requirements: 3.1, 3.5, 4.1, 5.1, 5.2_
+  - [ ]* 3.3 Write property tests for orderService
+    - **Property 5: Order placement produces valid order** — For any valid DeliveryDetails and non-empty order items, placing an order produces an Order with status "Order Received", non-empty ID, correct items, correct delivery details, matching total, and valid timestamp.
+    - **Validates: Requirements 3.1, 3.5**
+    - **Property 7: Order persistence round-trip** — For any successfully placed order, retrieving it by ID returns an equivalent order.
+    - **Validates: Requirements 3.5, 4.1, 5.2**
+    - **Property 9: Order status sequence invariant** — For any Order, status can only advance forward through ["Order Received", "Preparing", "Out for Delivery", "Delivered"]. Backward transitions are rejected.
+    - **Validates: Requirements 4.3**
+    - **Property 12: All orders retrievable** — For any set of placed orders, getAllOrders returns a list containing every placed order with matching length.
+    - **Validates: Requirements 5.1**
+  - [ ] 3.4 Implement `statusSimulator` in `server/src/simulator/statusSimulator.ts`
+    - `startSimulation(orderId, intervalMs)`: advance order status through STATUS_SEQUENCE at intervals (default 10s), stop at "Delivered"
+    - `stopSimulation(orderId)`: clear interval for an order
+    - _Requirements: 4.4_
+
+- [ ] 4. Implement server controllers and routes
+  - [ ] 4.1 Implement `menuController` in `server/src/controllers/menuController.ts`
+    - `getAll(req, res)`: call menuService.getAllItems(), return JSON array
+    - _Requirements: 1.1_
+  - [ ] 4.2 Implement `orderController` in `server/src/controllers/orderController.ts`
+    - `create(req, res)`: validate request body, call orderService.placeOrder(), return 201 with Order or 400 with errors
+    - `getAll(req, res)`: call orderService.getAllOrders(), return JSON array
+    - `getById(req, res)`: call orderService.getOrder(id), return Order or 404
+    - `updateStatus(req, res)`: validate status, call orderService.updateOrderStatus(), return Order or 400
+    - Wrap all handlers with try/catch for 500 errors
+    - _Requirements: 3.1, 3.3, 3.4, 4.1, 4.2, 5.1, 5.2, 6.1, 6.4_
+  - [ ] 4.3 Define routes in `server/src/routes/`
+    - `menuRoutes.ts`: GET /api/menu → menuController.getAll
+    - `orderRoutes.ts`: POST /api/orders → orderController.create, GET /api/orders → orderController.getAll, GET /api/orders/:id → orderController.getById, PATCH /api/orders/:id → orderController.updateStatus
+    - _Requirements: 7.4_
+  - [ ] 4.4 Create Express app in `server/src/app.ts` and entry point in `server/src/index.ts`
+    - Configure JSON body parsing, CORS, mount routes
+    - _Requirements: 7.3, 7.4_
+  - [ ]* 4.5 Write property test for order serialization round-trip
+    - **Property 11: Order serialization round-trip** — For any valid Order entity, serializing to JSON then deserializing produces an equivalent Order.
+    - **Validates: Requirements 8.3**
+  - [ ]* 4.6 Write API route integration tests with supertest
+    - Test GET /api/menu returns menu items
+    - Test POST /api/orders with valid data returns 201
+    - Test POST /api/orders with empty cart returns 400
+    - Test POST /api/orders with invalid delivery details returns 400
+    - Test GET /api/orders/:id returns order or 404
+    - Test PATCH /api/orders/:id with valid/invalid status transitions
+    - _Requirements: 1.1, 3.1, 3.3, 3.4, 4.1, 4.2, 6.1, 6.2, 6.3_
+
+- [ ] 5. Checkpoint - Ensure all server tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 6. Implement client API layer and hooks
+  - [ ] 6.1 Create API client functions in `client/src/api/`
+    - `fetchMenu()`: GET /api/menu
+    - `placeOrder(request)`: POST /api/orders
+    - `fetchOrders()`: GET /api/orders
+    - `fetchOrder(id)`: GET /api/orders/:id
+    - Configure base URL (environment variable or proxy)
+    - _Requirements: 1.1, 3.1, 5.1, 5.2_
+  - [ ] 6.2 Implement `useCart` hook in `client/src/hooks/useCart.ts`
+    - Use `useReducer` with `CartItem[]` state and `CartAction` union type
+    - Actions: ADD_ITEM (new → qty 1, existing → increment), UPDATE_QUANTITY (set qty, remove if 0), REMOVE_ITEM, CLEAR
+    - Expose: `cart`, `addItem`, `updateQuantity`, `removeItem`, `clearCart`, `cartTotal`
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
+  - [ ]* 6.3 Write property tests for useCart hook
+    - **Property 1: Cart add item behavior** — For any cart and MenuItem, adding creates qty 1 if new, increments if existing. Other items unchanged.
+    - **Validates: Requirements 2.1, 2.2**
+    - **Property 2: Cart update quantity** — For any cart with an item and any positive integer, updating sets quantity to that value. Other items unchanged.
+    - **Validates: Requirements 2.3**
+    - **Property 3: Cart remove on zero quantity** — For any cart with an item, setting quantity to 0 removes it. Cart has one fewer item.
+    - **Validates: Requirements 2.4**
+    - **Property 4: Cart total computation** — For any cart, total equals sum of (price × quantity) for each item, rounded to 2 decimal places.
+    - **Validates: Requirements 2.5**
+  - [ ] 6.4 Implement `useMenu` hook in `client/src/hooks/useMenu.ts`
+    - Fetch menu items on mount, expose `menuItems`, `loading`, `error`
+    - _Requirements: 1.1_
+  - [ ] 6.5 Implement `useOrders` hook in `client/src/hooks/useOrders.ts`
+    - `placeOrder(items, delivery)`: POST to API, return order
+    - `fetchAllOrders()`: GET all orders
+    - Expose `orders`, `loading`, `error`, `placeOrder`, `refreshOrders`
+    - _Requirements: 3.1, 5.1_
+  - [ ] 6.6 Implement `useOrderStatus` hook in `client/src/hooks/useOrderStatus.ts`
+    - Poll GET /api/orders/:id at configurable interval (default 5s)
+    - Stop polling when status is "Delivered"
+    - Expose `order`, `loading`, `error`
+    - _Requirements: 4.1, 4.5_
+  - [ ]* 6.7 Write property test for cart cleared after order
+    - **Property 8: Cart cleared after order placement** — For any non-empty cart, after placing an order, the cart should be empty.
+    - **Validates: Requirements 3.6**
+
+- [ ] 7. Implement client MUI theme and reusable components
+  - [ ] 7.1 Create MUI theme in `client/src/theme/`
+    - Warm color palette (orange/amber primary), responsive breakpoints, consistent typography
+    - _Requirements: UI design_
+  - [ ] 7.2 Implement `NavBar` component
+    - AppBar with app title, cart badge icon, navigation links (Menu, Cart, Orders)
+    - Uses MUI AppBar, Toolbar, Badge, IconButton
+    - _Requirements: UI navigation_
+  - [ ] 7.3 Implement `MenuItemCard` component
+    - Card with food image, name, description, price, "Add to Cart" button
+    - Uses MUI Card, CardMedia, CardContent, CardActions
+    - _Requirements: 1.3_
+  - [ ] 7.4 Implement `CartItemRow` component
+    - Row with item name, price, quantity controls (+/-), line total, remove button
+    - Uses MUI ButtonGroup, IconButton, Typography
+    - _Requirements: 2.6_
+  - [ ] 7.5 Implement `OrderStatusStepper` component
+    - Visual stepper showing order progress through 4 stages
+    - Uses MUI Stepper, Step, StepLabel
+    - _Requirements: 4.5_
+  - [ ] 7.6 Implement `EmptyState` component
+    - Friendly empty state with icon and message, reusable for empty cart/menu/orders
+    - _Requirements: 1.4_
+
+- [ ] 8. Implement client pages and routing
+  - [ ] 8.1 Implement `MenuPage`
+    - Grid of MenuItemCard components, "Add to Cart" triggers useCart.addItem
+    - Empty state when no items
+    - Loading skeleton while fetching
+    - _Requirements: 1.1, 1.3, 1.4, 2.1_
+  - [ ] 8.2 Implement `CartPage`
+    - List of CartItemRow components with quantity controls
+    - Cart total display, "Proceed to Checkout" button (disabled if cart empty)
+    - Empty state when cart is empty
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
+  - [ ] 8.3 Implement `CheckoutPage`
+    - Form with name, address, phone fields using MUI TextField with inline validation
+    - Order summary sidebar showing cart items and total
+    - Submit calls useOrders.placeOrder, clears cart, navigates to OrderStatusPage
+    - _Requirements: 3.1, 3.2, 3.4, 3.6_
+  - [ ] 8.4 Implement `OrderStatusPage`
+    - Display order details with OrderStatusStepper
+    - Poll for status updates using useOrderStatus hook
+    - Show order items, delivery details, total
+    - _Requirements: 4.1, 4.3, 4.5, 5.2_
+  - [ ] 8.5 Implement `OrdersPage`
+    - List of all orders with status chips, clickable to navigate to OrderStatusPage
+    - Uses MUI Table or List
+    - _Requirements: 5.1_
+  - [ ] 8.6 Set up React Router and App component
+    - Routes: / → MenuPage, /cart → CartPage, /checkout → CheckoutPage, /orders → OrdersPage, /orders/:id → OrderStatusPage
+    - Wrap with CartContext provider (from useCart), ThemeProvider
+    - _Requirements: 7.5_
+
+- [ ] 9. Checkpoint - Ensure all tests pass and app runs end-to-end
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 10. Final integration and polish
+  - [ ] 10.1 Configure Vite proxy for API calls during development
+    - Set up proxy in `vite.config.ts` to forward `/api` requests to Express server
+  - [ ] 10.2 Add CORS configuration to Express for production
+    - Allow client origin in production deployment
+  - [ ]* 10.3 Write component tests for key UI components
+    - Test MenuItemCard renders all fields
+    - Test CartItemRow renders quantity controls and totals
+    - Test CheckoutPage form validation (inline errors for empty fields, invalid phone)
+    - _Requirements: 1.3, 2.6, 3.2_
+
+- [ ] 11. Final checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+## Notes
+
+- Tasks marked with `*` are optional and can be skipped for faster MVP
+- Each task references specific requirements for traceability
+- Checkpoints ensure incremental validation
+- Property tests validate universal correctness properties using fast-check (min 100 iterations)
+- Unit tests validate specific examples and edge cases
+- Server tests should be runnable independently of client and vice versa
