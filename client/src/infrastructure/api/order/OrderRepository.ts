@@ -4,7 +4,7 @@ import type { IHttpClient } from '@/infrastructure/utils/http/types';
 import { BaseRepository } from '../BaseRepository';
 
 export class OrderRepository extends BaseRepository implements IOrderRepository {
-  private readonly baseUrl = '/api/orders';
+  private readonly baseUrl = '/orders';
 
   constructor(httpClient: IHttpClient) {
     super(httpClient);
