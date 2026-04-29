@@ -3,7 +3,7 @@ import { createBrowserRouter, Outlet, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import NavBar from '@/presentation/shared/organisms/NavBar';
 import { useCartContext } from '@/presentation/shared/contexts/CartContext';
-import { useOrderContext } from '@/presentation/features/orders/context/OrderContext';
+import { useOrderActions } from '@/presentation/features/orders/hooks/useOrderActions';
 import type { DeliveryDetails } from '@/domain/models/types';
 
 const MenuPage        = lazy(() => import('@/presentation/features/menu/MenuPage'));
@@ -47,7 +47,7 @@ function CartRoute() {
 
 function CheckoutRoute() {
   const { cart, cartTotal, clearCart } = useCartContext();
-  const { placeOrder } = useOrderContext();
+  const { placeOrder } = useOrderActions();
   if (cart.length === 0) return <Navigate to="/menu" replace />;
 
   const handlePlaceOrder = async (
