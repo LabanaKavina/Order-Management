@@ -1,0 +1,22 @@
+{
+  "name": "fooddash-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Food ordering platform - monorepo",
+  "scripts": {
+    "install:all": "npm install --prefix client && npm install --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "dev:server": "npm run dev --prefix server",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "build:client": "npm run build --prefix client",
+    "build:server": "npm run build --prefix server",
+    "build": "npm run build:server && npm run build:client",
+    "test:client": "npm test --prefix client",
+    "test:server": "npm test --prefix server",
+    "test": "npm run test:server && npm run test:client",
+    "vercel-build": "cd client && npm install && npm run build && cd ../server && npm install && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

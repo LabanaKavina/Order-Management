@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "jest --config jest.config.ts --no-coverage && tsc && vite build",
+    "build": "tsc && vite build",
+    "vercel-build": "npm run build",
     "preview": "vite preview",
     "test": "jest --config jest.config.ts",
     "test:coverage": "jest --config jest.config.ts --coverage"

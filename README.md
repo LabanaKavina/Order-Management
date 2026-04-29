@@ -400,38 +400,12 @@ npm test             # Run all tests
 ### Frontend (`client/`)
 ```bash
 npm run dev          # Start Vite dev server
-npm run build        # Build for production (runs tests first)
+npm run build        # Build for production
+npm run vercel-build # Build for Vercel deployment
 npm run preview      # Preview production build
 npm test             # Run all tests
 npm run test:coverage # Run tests with coverage report
 ```
-
----
-
-## 🤝 Contributing
-
-This is a portfolio/demo project, but suggestions are welcome!
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
----
-
-## 👤 Author
-
-**Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your Name](https://linkedin.com/in/yourprofile)
-- Email: your.email@example.com
 
 ---
 
