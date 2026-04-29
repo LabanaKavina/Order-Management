@@ -17,6 +17,7 @@
     "vercel-build": "cd server && npm install && npm run build && cd ../client && npm install && npm run build && cp -r dist ../public"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "@vercel/node": "^3.0.0"
   }
 }
