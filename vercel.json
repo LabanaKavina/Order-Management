@@ -2,6 +2,10 @@
   "version": 2,
   "builds": [
     {
+      "src": "api/[...path].ts",
+      "use": "@vercel/node"
+    },
+    {
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
@@ -12,7 +16,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/[...path]"
+      "dest": "/api/[...path].ts"
     },
     {
       "src": "/assets/(.*)",
