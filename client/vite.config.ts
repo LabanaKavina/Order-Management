@@ -12,12 +12,8 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/menu': {
-        target: 'http://localhost:3001/api',
-        changeOrigin: true,
-      },
-      '/orders': {
-        target: 'http://localhost:3001/api',
+      '/api': {
+        target: 'http://localhost:3001',
         changeOrigin: true,
       },
     },

@@ -4,7 +4,7 @@ import type { IHttpClient } from '@/infrastructure/utils/http/types';
 import { BaseRepository } from '../BaseRepository';
 
 export class MenuRepository extends BaseRepository implements IMenuRepository {
-  private readonly baseUrl = '/menu';
+  private readonly baseUrl = '/api/menu';
 
   constructor(httpClient: IHttpClient) {
     super(httpClient);
