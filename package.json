@@ -14,7 +14,7 @@
     "test:client": "npm test --prefix client",
     "test:server": "npm test --prefix server",
     "test": "npm run test:server && npm run test:client",
-    "vercel-build": "cd client && npm install && npm run build && cd ../server && npm install && npm run build"
+    "vercel-build": "cd server && npm install && npm run build && cd ../client && npm install && npm run build && cp -r dist ../public"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
